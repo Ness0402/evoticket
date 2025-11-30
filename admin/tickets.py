@@ -85,7 +85,7 @@ def admin_tickets_ui():
             total_disponibles = sum(t.cantidad_disponible for t in tickets_evento)
             st.write(f"🟢 **Total disponibles: {total_disponibles}**")
 
-            for t in tickets:
+            for t in tickets_evento:  # <-- aquí iteramos sobre los tickets del evento
                 evento_nombre = [k for k,v in opciones_evento.items() if v == t.evento_id][0]
                 categoria_nombre = [k for k,v in opciones_categoria.items() if v == t.category_id][0]
 
@@ -95,16 +95,24 @@ def admin_tickets_ui():
                         f"Categoría {t.id}",
                         list(opciones_categoria.values()),
                         index=list(opciones_categoria.values()).index(t.category_id),
-                        key=f"cat_{t.id}",
+                        key=f"cat_{t.id}_ticket",  # <--- clave única
                         format_func=lambda x: [k for k,v in opciones_categoria.items() if v == x][0]
                     )
 
-                    new_precio = st.number_input("Precio", value=t.precio, key=f"pre_{t.id}")
-                    new_qty = st.number_input("Cantidad disponible", value=t.cantidad_disponible, key=f"qty_{t.id}")
+                    new_precio = st.number_input(
+                        "Precio",
+                        value=t.precio,
+                        key=f"pre_{t.id}_ticket"  # <--- clave única
+                    )
+                    new_qty = st.number_input(
+                        "Cantidad disponible",
+                        value=t.cantidad_disponible,
+                        key=f"qty_{t.id}_ticket"  # <--- clave única
+                    )
 
                     colA, colB = st.columns(2)
                     with colA:
-                        if st.button("💾 Guardar", key=f"save_tk_{t.id}"):
+                        if st.button("💾 Guardar", key=f"save_tk_{t.id}_ticket"):
                             t.category_id = new_category
                             t.precio = new_precio
                             t.cantidad_disponible = new_qty
@@ -114,9 +122,10 @@ def admin_tickets_ui():
                             st.rerun()
 
                     with colB:
-                        if st.button("🗑️ Eliminar", key=f"del_tk_{t.id}"):
+                        if st.button("🗑️ Eliminar", key=f"del_tk_{t.id}_ticket"):
                             db.delete(t)
                             db.commit()
                             st.warning("Eliminado")
                             time.sleep(1)
                             st.rerun()
+
