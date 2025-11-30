@@ -8,6 +8,7 @@ from admin.users import admin_users_ui
 from admin.compra import admin_compras_ui
 from public.eventos import public_eventos_ui
 from public.compra import compra_tickets_ui
+import uuid
 
 st.set_page_config(
     page_title="Evoticket",
@@ -32,9 +33,7 @@ if st.session_state.user is None:
 
     if menu == "Eventos Públicos":
         public_eventos_ui()
-        if "vista" in st.session_state and st.session_state.vista == "compra":
-            compra_tickets_ui()
-            st.stop()
+        st.stop()
 
     elif menu == "Iniciar sesión":
         login_success = login_ui()

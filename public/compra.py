@@ -9,7 +9,7 @@ import datetime
 db = SessionLocal()
 TIPOS_DOC = ["DUI", "Pasaporte", "Otro"]
 
-def compra_tickets_ui():
+def compra_tickets_ui(form_id):
     evento_id = st.session_state.get("evento_compra_id")
     evento = db.query(Evento).filter_by(id=evento_id).first()
     if not evento:
@@ -21,16 +21,17 @@ def compra_tickets_ui():
     st.write(f"📅 Fecha: {evento.fecha}")
     st.write("---")
 
-    nombres = st.text_input("Nombres")
-    apellidos = st.text_input("Apellidos")
-    tipo_doc = st.selectbox("Tipo de documento", TIPOS_DOC)
-    documento = st.text_input("Número de documento")
+    nombres = st.text_input("Nombres", key=f"nombres_{form_id}")
+    apellidos = st.text_input("Apellidos", key=f"apellidos_{form_id}")
+    tipo_doc = st.selectbox("Tipo de documento", TIPOS_DOC, key=f"tipo_doc_{form_id}")
+    documento = st.text_input("Número de documento", key=f"documento_{form_id}")
     fecha_nac = st.date_input(
         "Fecha de nacimiento",
         min_value=datetime.date(1900, 1, 1),
-        max_value=datetime.date.today()
+        max_value=datetime.date.today(),
+        key=f"fecha_nac_{form_id}"
     )
-    correo = st.text_input("Correo electrónico (para registro)")
+    correo = st.text_input("Correo electrónico (para registro)", key=f"correo_{form_id}")
 
     tickets_disponibles = db.query(TicketType).filter(
         TicketType.evento_id == evento.id,
@@ -48,18 +49,19 @@ def compra_tickets_ui():
     ticket_id = st.selectbox(
         "Selecciona el tipo de ticket",
         list(opciones_ticket.values()),
-        format_func=lambda x: [k for k, v in opciones_ticket.items() if v == x][0]
+        format_func=lambda x: [k for k, v in opciones_ticket.items() if v == x][0],
+        key=f"ticket_select_{form_id}"
     )
-
     ticket = db.query(TicketType).filter_by(id=ticket_id).first()
 
     cantidad = st.number_input(
         "Cantidad de tickets",
         min_value=1,
-        max_value=ticket.cantidad_disponible
+        max_value=ticket.cantidad_disponible,
+        key=f"cantidad_{form_id}"
     )
 
-    if st.button("Confirmar compra"):
+    if st.button("Confirmar compra", key=f"btn_confirmar_{form_id}"):
         if not es_mayor_edad(fecha_nac):
             st.error("Debes ser mayor de edad para comprar tickets.")
             return
@@ -86,11 +88,10 @@ def compra_tickets_ui():
         db.refresh(compra)
 
         qr_bytes = generar_qr(compra.qr_uuid)
+        pdf_bytes = generar_pdf_ticket(compra, evento, qr_bytes)
 
         st.success("🎉 Compra realizada correctamente.")
         st.info("Puedes descargar tus tickets ahora. Si no los descargas, deberás presentar tu documento el día del evento.")
-
-        pdf_bytes = generar_pdf_ticket(compra, evento, qr_bytes)
 
         st.download_button(
             label="📄 Descargar Tickets en PDF",
